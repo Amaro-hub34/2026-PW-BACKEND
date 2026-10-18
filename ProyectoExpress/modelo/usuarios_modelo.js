@@ -38,7 +38,7 @@ async function actualizar(id, {nombre, correo, rol}) {
 
 //eliminar 
 async function eliminar(id){
-    const [filas] = await pool.query(`DELETE FROM usuarios WHERE id=?`, [id]);
+    const [info] = await pool.query(`DELETE FROM usuarios WHERE id=?`, [id]);
     return info.affectedRows > 0;
 }
 
