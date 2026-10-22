@@ -1,11 +1,23 @@
-//Aquí se hará el controlador de asistencia, con sus funciones correspondientes para
-//  registrar y consultar asistencias.
 const asistenciaModel = require('../modelo/asistencia_modelo');
 
 async function registrarAsistencia(req, res) {
     try {
-        const { tallerId, nombreAlumno, boleta } = req.body;
-        const resultado = await asistenciaModel.registrarAsistencia({ tallerId, nombreAlumno, boleta });
+        const { taller_id, tallerId, nombre_alumno, nombreAlumno, boleta } = req.body;
+        
+        const idTaller = taller_id || tallerId;
+        const alumno = nombre_alumno || nombreAlumno;
+
+        if (!idTaller || !alumno || !boleta) {
+            return res.status(400).json({ 
+                error: "taller_id, nombre_alumno y boleta son obligatorios" 
+            });
+        }
+
+        const resultado = await asistenciaModel.registrarAsistencia({ 
+            tallerId: idTaller, 
+            nombreAlumno: alumno, 
+            boleta 
+        });
         res.status(201).json(resultado);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -21,4 +33,19 @@ async function obtenerAsistencia(req, res) {
         res.status(500).json({ error: error.message });
     }
 }
-module.exports = {registrarAsistencia,obtenerAsistencia};
+
+async function consultarAsistenciaPorTaller(req, res) {
+    try {
+        const { id } = req.params; // ID del taller
+        const asistencias = await asistenciaModel.consultarAsistenciaPorTaller(id);
+        res.json(asistencias);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
+module.exports = {
+    registrarAsistencia,
+    obtenerAsistencia,
+    consultarAsistenciaPorTaller
+};
