@@ -36,7 +36,7 @@ async function obtenerAsistencia(req, res) {
 
 async function consultarAsistenciaPorTaller(req, res) {
     try {
-        const { id } = req.params; // ID del taller
+        const { id } = req.params;
         const asistencias = await asistenciaModel.consultarAsistenciaPorTaller(id);
         res.json(asistencias);
     } catch (error) {
