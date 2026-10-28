@@ -10,10 +10,15 @@ function validarBoleta(boleta) {
   return boleta.length === 8 && /^\d+$/.test(boleta);
 }
 
-
-function validarContrasena(){
- if(typeof contrasena !== 'string') return false;
- return contrasena.length >= 8;
+function validarNombre(nombre) {
+  if (typeof nombre !== 'string') return false;
+  const limpio = nombre.trim();
+  return limpio.length > 0 && limpio.length <= 100 && /^[\p{L}\s]+$/u.test(limpio);
 }
 
-module.exports = {validarCorreo, validarBoleta, validarContrasena};
+function validarContrasena(contrasena) {
+  if (typeof contrasena !== 'string') return false;
+  return contrasena.length >= 8;
+}
+
+module.exports = {validarCorreo, validarBoleta, validarContrasena, validarNombre};

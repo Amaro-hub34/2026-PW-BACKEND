@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
 const usuariosModel = require('../modelo/usuarios_modelo');
+const { validarNombre } = require('../validaciones');
+
+const ERROR_NOMBRE = "El nombre solo puede tener letras y espacios, máximo 100 caracteres";
 
 function esDuplicado(error){
     return error.code === 'ER_DUP_ENTRY' || error.code === '23505' || error.errno === 1062;
 }
-
-// Consultar a todos los usuarios
 async function listarUsuarios(req, res){
     try{
         const usuarios = await usuariosModel.listar();
@@ -15,7 +16,6 @@ async function listarUsuarios(req, res){
     }
 }
 
-// Obtener un usuario por su ID
 async function obtenerUsuario(req, res){
     try{
         const usuario = await usuariosModel.obtenerPorId(req.params.id);
@@ -26,26 +26,23 @@ async function obtenerUsuario(req, res){
     }
 }
 
-// Registrar un nuevo usuario
 async function crearUsuario(req, res) {
     try {
         const { nombre, correo, password, contrasena, boleta, rol } = req.body;
         const pass = password || contrasena;
-
         if (!nombre || !correo || !pass || !boleta) {
             return res.status(400).json({ error: "nombre, correo, contrasena y boleta son obligatorios" });
         }
-
+        if (!validarNombre(nombre)) {
+            return res.status(400).json({ error: ERROR_NOMBRE });
+        }
         const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!regexCorreo.test(correo)) {
             return res.status(400).json({ error: "El correo no tiene un formato válido" });
         }
-
-        if (boleta.length !== 10) {
+        if (String(boleta).length !== 10) {
             return res.status(400).json({ error: "La boleta debe tener 10 dígitos" });
         }
-
-        // 4. Validar longitud de la contraseña (al menos 8 caracteres)
         if (pass.length < 8) {
             return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
         }
@@ -53,7 +50,7 @@ async function crearUsuario(req, res) {
         const contrasenaHash = await bcrypt.hash(pass, 10);
 
         const nuevoUsuario = await usuariosModel.crear({
-            nombre,
+            nombre: nombre.trim(),
             correo,
             contrasenaHash,
             boleta,
@@ -66,14 +63,12 @@ async function crearUsuario(req, res) {
         });
     } catch (error) {
         if (esDuplicado(error)) {
-            // La guía pide estrictamente 409 Conflict para duplicados
             return res.status(409).json({ error: "Ya existe un usuario con ese correo o boleta" });
         }
         res.status(500).json({ error: error.message });
     }
 }
 
-// Actualizar un usuario
 async function actualizarUsuario(req, res) {
     try {
         const { nombre, correo, rol } = req.body;
@@ -87,15 +82,23 @@ async function actualizarUsuario(req, res) {
             return res.status(400).json({ error: "Envía al menos uno de: nombre, correo, rol" });
         }
 
+        if (nombreValido && !validarNombre(nombre)) {
+            return res.status(400).json({ error: ERROR_NOMBRE });
+        }
+
         if (correoValido) {
             const usuarioExistente = await usuariosModel.obtenerPorCorreo(correo);
-            
+
             if (usuarioExistente && String(usuarioExistente.id) !== String(idUsuarioActual)) {
                 return res.status(409).json({ error: "El correo ya está registrado por otro usuario" });
             }
         }
 
-        const usuarioActualizado = await usuariosModel.actualizar(idUsuarioActual, { nombre, correo, rol });
+        const usuarioActualizado = await usuariosModel.actualizar(idUsuarioActual, {
+            nombre: nombreValido ? nombre.trim() : nombre,
+            correo,
+            rol
+        });
 
         if (!usuarioActualizado) {
             return res.status(404).json({ error: "Usuario no encontrado" });
@@ -113,7 +116,6 @@ async function actualizarUsuario(req, res) {
     }
 }
 
-// Eliminar un usuario
 async function eliminarUsuario(req, res) {
     try {
         const eliminado = await usuariosModel.eliminar(req.params.id);

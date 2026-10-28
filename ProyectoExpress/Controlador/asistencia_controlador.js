@@ -23,7 +23,7 @@ async function registrarAsistencia(req, res) {
         res.status(500).json({ error: error.message });
     }
 }
-
+//método para poder obtener la asistencia por id, para poder consultar la asistencia de un alumno en específico
 async function obtenerAsistencia(req, res) {
     try {
         const asistencia = await asistenciaModel.obtenerPorId(req.params.id);
